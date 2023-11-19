@@ -13,41 +13,20 @@ Route::get('/logged', function () {
     dd(auth()->user());
 });
 
-Route::get('/auth/github/redirect', function () {
-    return Socialite::driver('github')->redirect();
+Route::get('/auth/{provider}/redirect', function (string $provider) {
+    return Socialite::driver($provider)->redirect();
 })->name('socialite.login');
 
-Route::get('/auth/github/callback', function () {
-    $githubUser = Socialite::driver('github')->user();
+Route::get('/auth/{provider}/callback', function (string $provider) {
+    $providerUser = Socialite::driver($provider)->user();
 
     $user = User::updateOrCreate([
-        'github_id' => $githubUser->id,
+        'email' => $providerUser->getEmail(),
     ], [
-        'name' => $githubUser->nickname,
-        'email' => $githubUser->email,
-        'github_token' => $githubUser->token,
-        'github_refresh_token' => $githubUser->refreshToken,
-    ]);
-
-    Auth::login($user);
-    return redirect('/logged');
-    // $user->token
-});
-
-Route::get('/auth/google/redirect', function () {
-    return Socialite::driver('google')->redirect();
-})->name('socialite.google.login');
-
-Route::get('/auth/google/callback', function () {
-    $googleUser = Socialite::driver('google')->user();
-
-    $user = User::updateOrCreate([
-        'google_id' => $googleUser->id,
-    ], [
-        'name' => $googleUser->name,
-        'email' => $googleUser->email,
-        'google_token' => $googleUser->token,
-        'google_refresh_token' => $googleUser->refreshToken,
+        'provider_id' => $providerUser->getId(),
+        'name' => $providerUser->getName() ? $providerUser->getName() : $providerUser->getNickname(),
+        'provider_avatar' => $providerUser->getAvatar(),
+        'provider_name' => $provider,
     ]);
 
     Auth::login($user);
